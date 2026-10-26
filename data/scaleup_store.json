@@ -1,0 +1,80 @@
+{
+  "inquiries": [
+    {
+      "name": "Abebe Kebede",
+      "email": "abebe@ethiofarms.com",
+      "need": "ERP (Odoo)",
+      "message": "We want to automate our coffee supply chain and inventory with Odoo ERP.",
+      "company": "Ethio Farms Export",
+      "id": "inq-1793006894373-2dy5k",
+      "status": "new",
+      "createdAt": "2026-10-26T09:28:14.373Z"
+    },
+    {
+      "id": "inq-1",
+      "name": "Alemayehu Tadesse",
+      "email": "alemayehu@abyssiniatrading.et",
+      "phone": "+251 91 123 4567",
+      "company": "Abyssinia Trading & Distribution",
+      "need": "ERP (Odoo)",
+      "message": "We are currently managing inventory across 4 warehouses in Addis Ababa with Excel and disconnected software. We want to implement Odoo 17 Enterprise for sales, inventory, local invoicing, and bank reconciliations.",
+      "status": "new",
+      "createdAt": "2026-10-24T09:27:19.505Z"
+    },
+    {
+      "id": "inq-2",
+      "name": "Bethlehem Assefa",
+      "email": "b.assefa@zemenlogistics.com",
+      "phone": "+251 92 345 6789",
+      "company": "Zemen Logistics Solutions",
+      "need": "Web application",
+      "message": "We need a custom shipment tracking and client portal integrated with our internal operational systems and SMS notifications.",
+      "status": "in_review",
+      "createdAt": "2026-10-22T09:27:19.505Z"
+    },
+    {
+      "id": "inq-3",
+      "name": "Dr. Dawit Hailu",
+      "email": "dhailu@oromiahealth.gov.et",
+      "phone": "+251 93 456 7890",
+      "company": "Regional Health Bureau",
+      "need": "Networking and infrastructure",
+      "message": "Reviewing network architecture, secure server backup protocols, and cloud migration for regional monitoring data.",
+      "status": "contacted",
+      "createdAt": "2026-10-19T09:27:19.505Z"
+    }
+  ],
+  "consultations": [
+    {
+      "name": "Selamawit Bekele",
+      "email": "selam@fintech.et",
+      "company": "FinTech Ethiopia",
+      "date": "2026-11-05",
+      "time": "02:00 PM",
+      "service": "Web application",
+      "notes": "Discussing customer portal architecture.",
+      "id": "cons-1793006903281-087r3",
+      "status": "pending",
+      "createdAt": "2026-10-26T09:28:23.281Z"
+    },
+    {
+      "id": "cons-1",
+      "name": "Tewodros Kassahun",
+      "email": "tk@finetextextiles.et",
+      "phone": "+251 91 222 3344",
+      "company": "FineTex Manufacturing",
+      "date": "2026-11-02",
+      "time": "10:00 AM",
+      "service": "ERP (Odoo)",
+      "notes": "Manufacturing module and bill of materials setup.",
+      "status": "confirmed",
+      "createdAt": "2026-10-24T21:27:19.505Z"
+    }
+  ],
+  "newsletter": [
+    {
+      "email": "tech-lead@ethiopianfintech.com",
+      "createdAt": "2026-10-26T09:27:19.505Z"
+    }
+  ]
+}
