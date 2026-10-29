@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSiteContent, updateSiteContent, resetSiteContent } from "@/lib/db";
+import { getAuthenticatedAdmin } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
+// Public: Landing page reads site content
 export async function GET() {
   try {
     const content = await getSiteContent();
@@ -13,8 +17,17 @@ export async function GET() {
   }
 }
 
+// Protected: Only authenticated admins can update live website content
 export async function POST(req: NextRequest) {
   try {
+    const user = await getAuthenticatedAdmin(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized. Admin login required." },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     if (!body || typeof body !== "object") {
       return NextResponse.json(
@@ -36,8 +49,17 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function DELETE() {
+// Protected: Only authenticated admins can reset content
+export async function DELETE(req: NextRequest) {
   try {
+    const user = await getAuthenticatedAdmin(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized. Admin login required." },
+        { status: 401 }
+      );
+    }
+
     const reset = await resetSiteContent();
     return NextResponse.json({
       success: true,

@@ -30,8 +30,16 @@ This project faithfully preserves the original design, exact copy, brand identit
 - **`Accordion`**: Collapsible FAQ & process expansion.
 - **`Toaster` (Sonner)**: Real-time feedback on inquiry submissions and status updates.
 
-### 3. Professional Admin Portal & Content Management (`/admin`)
-- **Passcode Protected**: Secured behind an administrative authentication gate (`admin` or `scaleup2026`).
+### 3. Enterprise Secure Admin Portal & CMS (`/admin`)
+- **Multi-Layered Security Architecture**:
+  - **Node.js `crypto` with `scrypt` hashing & cryptographic salt**: Resistant to rainbow tables, dictionary attacks, and GPU cracking.
+  - **Constant-Time Verification**: Prevents side-channel timing analysis attacks using `crypto.timingSafeEqual`.
+  - **Revocable Database Session Tokens**: Stored as SHA-256 token hashes in the Neon PostgreSQL `admin_sessions` table; only the raw cryptographically random token is transmitted in an `HttpOnly`, `SameSite=Lax` cookie.
+  - **API Route Shielding**: All sensitive administrative endpoints (`GET/PATCH/DELETE /api/contact`, `GET /api/consultations`, `POST/DELETE /api/content`) strictly reject unauthenticated requests with HTTP 401 Unauthorized.
+  - **In-App Password Management**: Logged-in administrators can change their password directly in the console via the Security modal.
+- **Default Credentials**:
+  - **Username / Email**: `admin` or `admin@scaleuptech.et`
+  - **Default Initial Password**: `REDACTED_PASSWORD`
 - **Live Content Management System (CMS)**:
   - Edit **Hero** title, tagline, description, badge text.
   - Edit **Services** details, featured Odoo deliverables, and sub-services.
@@ -53,21 +61,27 @@ This project faithfully preserves the original design, exact copy, brand identit
 - Connected to **Neon Serverless PostgreSQL** via `@neondatabase/serverless` over HTTP/WebSocket pooling.
 - Zero serverless connection limits, cold-start resilience, and instant autoscaling.
 - Tables automatically managed:
+  - `admin_users`: Verified administrator accounts, password hashes, cryptographic salts, and roles.
+  - `admin_sessions`: Active, revocable sessions with expiration and client telemetry.
   - `inquiries`: Client contact submissions and CRM workflow states.
   - `consultations`: Discovery call appointments and time slots.
   - `site_content`: Dynamic CMS state persisted across all instances and deployments.
 - Automatic fallback to local store if running offline without an active internet connection.
 
 ### 5. Backend REST API
-- **`POST /api/contact`**: Validates and records contact inquiries.
-- **`GET /api/contact`**: Returns list of inquiries (supports search & status filtering).
-- **`PATCH /api/contact`**: Updates inquiry workflow status.
-- **`DELETE /api/contact?id=...`**: Removes an inquiry.
-- **`POST /api/consultations`**: Books 30-minute discovery calls.
-- **`GET /api/consultations`**: Retrieves booked appointments.
-- **`GET /api/content`**: Fetches active site copy (from Neon or defaults).
-- **`POST /api/content`**: Saves updated site copy to Neon PostgreSQL.
-- **`DELETE /api/content`**: Resets content back to default company copy.
+- **`POST /api/auth/login`**: Authenticates admin credentials, issues secure session cookie.
+- **`POST /api/auth/logout`**: Revokes session from database and clears auth cookie.
+- **`GET /api/auth/me`**: Returns currently authenticated administrator.
+- **`POST /api/auth/change-password`**: Updates administrator password with salt regeneration.
+- **`POST /api/contact`**: Validates and records contact inquiries (Public).
+- **`GET /api/contact`**: Returns list of inquiries (Protected, Admin only).
+- **`PATCH /api/contact`**: Updates inquiry workflow status (Protected, Admin only).
+- **`DELETE /api/contact?id=...`**: Removes an inquiry (Protected, Admin only).
+- **`POST /api/consultations`**: Books 30-minute discovery calls (Public).
+- **`GET /api/consultations`**: Retrieves booked appointments (Protected, Admin only).
+- **`GET /api/content`**: Fetches active site copy (Public).
+- **`POST /api/content`**: Saves updated site copy to Neon PostgreSQL (Protected, Admin only).
+- **`DELETE /api/content`**: Resets content back to default company copy (Protected, Admin only).
 - **`GET /api/stats`**: Live operational metrics and database engine identification.
 
 ---

@@ -264,3 +264,29 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
   },
 };
 
+export interface AdminUser {
+  id: string;
+  email: string;
+  username: string;
+  name: string;
+  role: "superadmin" | "admin" | "editor";
+  createdAt: string;
+  lastLogin?: string;
+}
+
+export interface AdminUserRecord extends AdminUser {
+  passwordHash: string;
+  salt: string;
+}
+
+export interface AdminSession {
+  id: string;
+  userId: string;
+  tokenHash: string;
+  createdAt: string;
+  expiresAt: string;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+

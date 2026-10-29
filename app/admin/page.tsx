@@ -16,6 +16,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   ArrowLeft,
   Mail,
   Phone,
@@ -43,21 +50,45 @@ import {
   Sliders,
   HelpCircle,
   Download,
+  Eye,
+  EyeOff,
+  Key,
+  User,
+  ShieldAlert,
+  LockKeyhole,
 } from "lucide-react";
-import { ContactInquiry, ConsultationBooking, SiteContent, DEFAULT_SITE_CONTENT } from "@/lib/types";
+import {
+  ContactInquiry,
+  ConsultationBooking,
+  SiteContent,
+  DEFAULT_SITE_CONTENT,
+  AdminUser,
+} from "@/lib/types";
 import { toast } from "sonner";
 
 export default function AdminPage() {
-  // Authentication gate
-  const [isAuthenticated, setIsAuthenticated] = React.useState(true);
-  const [passcode, setPasscode] = React.useState("");
-  const [loginError, setLoginError] = React.useState(false);
+  // Authentication states
+  const [currentUser, setCurrentUser] = React.useState<AdminUser | null>(null);
+  const [authChecking, setAuthChecking] = React.useState(true);
+  const [loginIdentifier, setLoginIdentifier] = React.useState("");
+  const [loginPassword, setLoginPassword] = React.useState("");
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [loginLoading, setLoginLoading] = React.useState(false);
+  const [loginError, setLoginError] = React.useState<string | null>(null);
+
+  // Password change modal state
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = React.useState(false);
+  const [currentPass, setCurrentPass] = React.useState("");
+  const [newPass, setNewPass] = React.useState("");
+  const [confirmPass, setConfirmPass] = React.useState("");
+  const [changingPassword, setChangingPassword] = React.useState(false);
+  const [showNewPassword, setShowNewPassword] = React.useState(false);
 
   // Data states
   const [inquiries, setInquiries] = React.useState<ContactInquiry[]>([]);
   const [consultations, setConsultations] = React.useState<ConsultationBooking[]>([]);
   const [stats, setStats] = React.useState<any>(null);
-  const [loading, setLoading] = React.useState(true);
+  const [loading, setLoading] = React.useState(false);
 
   // Navigation tabs
   const [activeTab, setActiveTab] = React.useState<"cms" | "inquiries" | "consultations" | "analytics">("cms");
@@ -76,31 +107,106 @@ export default function AdminPage() {
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
   const [searchQuery, setSearchQuery] = React.useState<string>("");
 
-  // Check auth session
+  // Check existing session on load
   React.useEffect(() => {
-    const authStored = localStorage.getItem("scaleup_admin_auth");
-    if (authStored === "true") {
-      setIsAuthenticated(true);
-    }
+    const checkAuth = async () => {
+      setAuthChecking(true);
+      try {
+        const res = await fetch("/api/auth/me");
+        const data = await res.json();
+        if (data.authenticated && data.user) {
+          setCurrentUser(data.user);
+        } else {
+          setCurrentUser(null);
+        }
+      } catch (err) {
+        setCurrentUser(null);
+      } finally {
+        setAuthChecking(false);
+      }
+    };
+    checkAuth();
   }, []);
 
-  const handleLogin = (e?: React.FormEvent) => {
+  const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (passcode === "scaleup2026" || passcode === "admin" || passcode === "") {
-      setIsAuthenticated(true);
-      localStorage.setItem("scaleup_admin_auth", "true");
-      setLoginError(false);
-      toast.success("Welcome back to ScaleUp Operations Console");
-    } else {
-      setLoginError(true);
-      toast.error("Invalid administrator passcode");
+    if (!loginIdentifier.trim() || !loginPassword) {
+      setLoginError("Please enter your username/email and password.");
+      return;
+    }
+    setLoginLoading(true);
+    setLoginError(null);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier: loginIdentifier, password: loginPassword }),
+      });
+      const data = await res.json();
+      if (data.success && data.user) {
+        setCurrentUser(data.user);
+        setLoginPassword("");
+        setLoginError(null);
+        toast.success(`Welcome back, ${data.user.name || "Administrator"}!`);
+      } else {
+        setLoginError(data.error || "Invalid username or password");
+        toast.error(data.error || "Authentication failed");
+      }
+    } catch (err) {
+      setLoginError("Failed to connect to authentication server");
+      toast.error("Network error during login");
+    } finally {
+      setLoginLoading(false);
     }
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    localStorage.removeItem("scaleup_admin_auth");
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (err) {}
+    setCurrentUser(null);
+    setInquiries([]);
+    setConsultations([]);
+    setStats(null);
     toast.info("Logged out of Operations Console");
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPass || !newPass || !confirmPass) {
+      toast.error("Please fill in all password fields");
+      return;
+    }
+    if (newPass !== confirmPass) {
+      toast.error("New passwords do not match");
+      return;
+    }
+    if (newPass.length < 8) {
+      toast.error("New password must be at least 8 characters");
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword: currentPass, newPassword: newPass }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Password changed successfully!");
+        setIsPasswordModalOpen(false);
+        setCurrentPass("");
+        setNewPass("");
+        setConfirmPass("");
+      } else {
+        toast.error(data.error || "Failed to update password");
+      }
+    } catch (err) {
+      toast.error("Error communicating with security service");
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
   // Fetch all data
@@ -119,8 +225,8 @@ export default function AdminPage() {
       const dataStats = await resStats.json();
       const dataContent = await resContent.json();
 
-      if (dataInq.success) setInquiries(dataInq.inquiries);
-      if (dataCons.success) setConsultations(dataCons.consultations);
+      if (dataInq.success) setInquiries(dataInq.inquiries || []);
+      if (dataCons.success) setConsultations(dataCons.consultations || []);
       if (dataStats.success) setStats(dataStats.stats);
       if (dataContent.success && dataContent.content) {
         setContent(dataContent.content);
@@ -134,10 +240,10 @@ export default function AdminPage() {
   };
 
   React.useEffect(() => {
-    if (isAuthenticated) {
+    if (currentUser) {
       fetchData();
     }
-  }, [isAuthenticated]);
+  }, [currentUser]);
 
   // Save CMS Content
   const handleSaveContent = async () => {
@@ -275,7 +381,29 @@ export default function AdminPage() {
     setHasUnsavedChanges(true);
   };
 
-  if (!isAuthenticated) {
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-[#F3F8FF] flex items-center justify-center p-6 font-sans">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="relative h-14 w-14 animate-pulse">
+            <Image
+              src="/images/logo.png"
+              alt="ScaleUp Tech PLC"
+              fill
+              className="object-contain"
+              priority
+            />
+          </div>
+          <div className="flex items-center gap-2 text-sm text-[#0B1B4D] font-semibold">
+            <RefreshCw className="w-4 h-4 animate-spin text-[#0B5FD9]" />
+            <span>Verifying secure administrative session...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
     return (
       <div className="min-h-screen bg-[#F3F8FF] flex items-center justify-center p-6 font-sans">
         <div className="w-full max-w-md bg-white border border-[#DCE7F7] rounded-3xl p-8 shadow-xl flex flex-col gap-6">
@@ -298,47 +426,97 @@ export default function AdminPage() {
               </p>
             </div>
             <p className="text-sm text-[#44546F] mt-1">
-              Authorized access only. Enter your administrator credentials to manage website contents, inquiries, and schedules.
+              Protected administrative area. Sign in with your verified credentials to manage website contents, inquiries, and schedules.
             </p>
           </div>
 
           <form onSubmit={handleLogin} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-[#0B1B4D]">
-                Administrator Passcode
+              <label className="text-xs font-bold text-[#0B1B4D] flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-[#0B5FD9]" />
+                Username or Email
               </label>
               <Input
-                type="password"
-                placeholder="Enter passcode (default: admin or press Login)"
-                value={passcode}
-                onChange={(e) => setPasscode(e.target.value)}
+                type="text"
+                placeholder="admin or admin@scaleuptech.et"
+                value={loginIdentifier}
+                onChange={(e) => setLoginIdentifier(e.target.value)}
                 className={loginError ? "border-red-500" : ""}
                 autoFocus
+                required
               />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-[#0B1B4D] flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-[#0B5FD9]" />
+                  Password
+                </span>
+              </label>
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter administrator password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  className={`pr-10 ${loginError ? "border-red-500" : ""}`}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
               {loginError && (
-                <span className="text-xs text-red-600">Incorrect passcode. Try again.</span>
+                <span className="text-xs text-red-600 flex items-center gap-1">
+                  <ShieldAlert className="w-3.5 h-3.5" />
+                  {loginError}
+                </span>
               )}
             </div>
 
             <Button
               type="submit"
-              className="bg-[#0B5FD9] hover:bg-[#084db3] text-white font-bold py-3 rounded-xl shadow-sm"
+              disabled={loginLoading}
+              className="bg-[#0B5FD9] hover:bg-[#084db3] text-white font-bold py-3 rounded-xl shadow-sm flex items-center justify-center gap-2"
             >
-              Sign In to Console
+              {loginLoading ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Authenticating...</span>
+                </>
+              ) : (
+                <>
+                  <Lock className="w-4 h-4" />
+                  <span>Sign In to Console</span>
+                </>
+              )}
             </Button>
+
+            {/* Default credentials reference card */}
+            <div className="p-3 bg-[#EAF3FF] border border-[#DCE7F7] rounded-xl text-xs text-[#0B1B4D] flex flex-col gap-1">
+              <div className="flex items-center gap-1.5 font-bold text-[#0B5FD9]">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Default Administrator Access:</span>
+              </div>
+              <p className="text-[11px] text-[#44546F] leading-relaxed">
+                <strong>Username:</strong> <code className="bg-white px-1.5 py-0.5 rounded border border-blue-200 font-mono">admin</code> &nbsp;·&nbsp;
+                <strong>Password:</strong> <code className="bg-white px-1.5 py-0.5 rounded border border-blue-200 font-mono">ScaleUp@Admin2026!</code>
+              </p>
+            </div>
 
             <div className="pt-2 flex items-center justify-between text-xs text-[#44546F]">
               <Link href="/" className="hover:text-[#0B5FD9] flex items-center gap-1 font-medium">
                 <ArrowLeft className="w-3.5 h-3.5" />
                 Return to Website
               </Link>
-              <button
-                type="button"
-                onClick={() => handleLogin()}
-                className="text-[#0B5FD9] hover:underline font-semibold"
-              >
-                Instant Access
-              </button>
+              <span className="text-[11px] text-slate-400">
+                Neon DB Protected
+              </span>
             </div>
           </form>
         </div>
@@ -378,15 +556,39 @@ export default function AdminPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* User Profile Pill */}
+            <div className="hidden sm:flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full border border-white/10">
+              <div className="w-5 h-5 rounded-full bg-[#1E88FF] text-white flex items-center justify-center text-[11px] font-bold">
+                {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : "A"}
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="text-xs font-semibold text-white leading-none">{currentUser?.name || "Administrator"}</span>
+                <span className="text-[10px] text-slate-300 leading-none mt-0.5">{currentUser?.email}</span>
+              </div>
+              <Badge className="bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/20 text-[10px] px-1.5 py-0 h-4 border border-emerald-500/30 font-mono uppercase">
+                {currentUser?.role || "superadmin"}
+              </Badge>
+            </div>
+
             <Link
               href="/"
               target="_blank"
               className="flex items-center gap-1.5 text-xs font-semibold text-slate-200 hover:text-white bg-white/10 hover:bg-white/15 px-3 py-1.5 rounded-full transition-colors border border-white/10"
               title="Open public website in a new tab"
             >
-              <span>View Live Website</span>
+              <span>Live Website</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </Link>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsPasswordModalOpen(true)}
+              className="bg-transparent text-white border-white/25 hover:bg-white/10 rounded-full text-xs font-semibold h-8 px-3"
+            >
+              <Key className="w-3.5 h-3.5 mr-1.5" />
+              Security
+            </Button>
 
             <Button
               variant="outline"
@@ -403,10 +605,11 @@ export default function AdminPage() {
               variant="ghost"
               size="sm"
               onClick={handleLogout}
-              className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full text-xs h-8 px-2.5"
+              className="text-red-300 hover:text-white hover:bg-red-500/20 rounded-full text-xs h-8 px-3 border border-red-400/20"
               title="Sign Out"
             >
-              <LogOut className="w-3.5 h-3.5" />
+              <LogOut className="w-3.5 h-3.5 mr-1.5" />
+              Sign Out
             </Button>
           </div>
         </div>
@@ -1371,6 +1574,86 @@ export default function AdminPage() {
           </div>
         )}
       </div>
+
+      {/* Change Password Dialog */}
+      <Dialog open={isPasswordModalOpen} onOpenChange={setIsPasswordModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-[#0B1B4D]">
+              <Key className="w-5 h-5 text-[#0B5FD9]" />
+              Change Administrator Password
+            </DialogTitle>
+            <DialogDescription className="text-xs text-[#44546F]">
+              Update your password credentials stored securely in Neon PostgreSQL.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleChangePassword} className="flex flex-col gap-4 mt-2">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-[#0B1B4D]">Current Password</label>
+              <Input
+                type="password"
+                placeholder="Enter current password"
+                value={currentPass}
+                onChange={(e) => setCurrentPass(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-[#0B1B4D]">New Password (min 8 characters)</label>
+              <div className="relative">
+                <Input
+                  type={showNewPassword ? "text" : "password"}
+                  placeholder="Enter new strong password"
+                  value={newPass}
+                  onChange={(e) => setNewPass(e.target.value)}
+                  className="pr-10"
+                  required
+                  minLength={8}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                >
+                  {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-[#0B1B4D]">Confirm New Password</label>
+              <Input
+                type="password"
+                placeholder="Re-enter new password"
+                value={confirmPass}
+                onChange={(e) => setConfirmPass(e.target.value)}
+                required
+                minLength={8}
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsPasswordModalOpen(false)}
+                className="text-xs"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={changingPassword}
+                className="bg-[#0B5FD9] hover:bg-[#084db3] text-white text-xs font-semibold"
+              >
+                {changingPassword ? "Updating Password..." : "Save New Password"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

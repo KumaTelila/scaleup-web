@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createInquiry, getInquiries, updateInquiryStatus, deleteInquiry } from "@/lib/db";
+import { getAuthenticatedAdmin } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
+// Public inquiry submission from website visitors
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -50,8 +54,17 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
+// Protected: Only authenticated admins can view customer inquiries
+export async function GET(req: NextRequest) {
   try {
+    const user = await getAuthenticatedAdmin(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized. Admin login required." },
+        { status: 401 }
+      );
+    }
+
     const inquiries = await getInquiries();
     return NextResponse.json({ success: true, inquiries });
   } catch (error) {
@@ -62,8 +75,17 @@ export async function GET() {
   }
 }
 
+// Protected: Only authenticated admins can change inquiry status
 export async function PATCH(req: NextRequest) {
   try {
+    const user = await getAuthenticatedAdmin(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized. Admin login required." },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const { id, status } = body;
     if (!id || !status) {
@@ -90,8 +112,17 @@ export async function PATCH(req: NextRequest) {
   }
 }
 
+// Protected: Only authenticated admins can delete inquiries
 export async function DELETE(req: NextRequest) {
   try {
+    const user = await getAuthenticatedAdmin(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized. Admin login required." },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     if (!id) {
@@ -101,8 +132,15 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    const deleted = await deleteInquiry(id);
-    return NextResponse.json({ success: deleted });
+    const ok = await deleteInquiry(id);
+    if (!ok) {
+      return NextResponse.json(
+        { success: false, error: "Inquiry not found." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ success: true, message: "Inquiry deleted." });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: "Failed to delete inquiry." },

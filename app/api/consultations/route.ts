@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createConsultation, getConsultations } from "@/lib/db";
+import { getAuthenticatedAdmin } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
+// Public consultation booking
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -52,8 +56,17 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
+// Protected: Only authenticated admins can view consultation bookings
+export async function GET(req: NextRequest) {
   try {
+    const user = await getAuthenticatedAdmin(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized. Admin login required." },
+        { status: 401 }
+      );
+    }
+
     const bookings = await getConsultations();
     return NextResponse.json({ success: true, consultations: bookings });
   } catch (error) {

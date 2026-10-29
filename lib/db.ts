@@ -67,6 +67,30 @@ async function ensureTables(sql: any) {
         updated_at TIMESTAMPTZ DEFAULT NOW()
       );
     `;
+    await sql`
+      CREATE TABLE IF NOT EXISTS admin_users (
+        id VARCHAR(100) PRIMARY KEY,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        username VARCHAR(100) UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        salt TEXT NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        role VARCHAR(50) DEFAULT 'superadmin',
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        last_login TIMESTAMPTZ
+      );
+    `;
+    await sql`
+      CREATE TABLE IF NOT EXISTS admin_sessions (
+        id VARCHAR(100) PRIMARY KEY,
+        user_id VARCHAR(100) NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+        token_hash VARCHAR(255) UNIQUE NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        expires_at TIMESTAMPTZ NOT NULL,
+        ip_address VARCHAR(100),
+        user_agent TEXT
+      );
+    `;
     tablesInitialized = true;
   } catch (err) {
     console.error("Neon table check error:", err);
