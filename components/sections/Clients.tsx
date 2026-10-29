@@ -3,47 +3,57 @@
 import * as React from "react";
 import { Card } from "@/components/ui/card";
 import { Building2, Landmark, TrendingUp } from "lucide-react";
+import { ClientsContent } from "@/lib/types";
 
-export function Clients() {
-  const segments = [
+interface ClientsProps {
+  content?: Partial<ClientsContent>;
+}
+
+const icons = [TrendingUp, Landmark, Building2];
+
+export function Clients({ content }: ClientsProps) {
+  const sectionTag = content?.sectionTag || "WHO WE SERVE";
+  const sectionTitle =
+    content?.sectionTitle || "Organizations that have outgrown spreadsheets";
+
+  const defaultSegments = [
     {
       title: "Growing SMEs",
       description:
         "One system for sales, stock, accounting and reporting, so owners see the whole business in one place.",
-      icon: TrendingUp,
       tag: "Primary Focus",
     },
     {
       title: "Public-sector bodies",
       description:
         "Large service platforms with workflow, audit trails and the reliability public services depend on.",
-      icon: Landmark,
       tag: "Institutions & Agencies",
     },
     {
       title: "Mid-size enterprises",
       description:
         "Integration across departments, careful migration and ongoing support from a team that knows your setup.",
-      icon: Building2,
       tag: "Multi-Department",
     },
   ];
+
+  const segments = content?.items || defaultSegments;
 
   return (
     <section id="clients" className="bg-[#F3F8FF] w-full border-t border-[#DCE7F7]/60">
       <div className="max-w-[1200px] mx-auto px-6 md:px-8 py-20 md:py-24 flex flex-col gap-12">
         <div className="flex flex-col gap-3 max-w-[720px]">
           <div className="text-[13px] font-bold tracking-[2px] text-[#0B5FD9] uppercase">
-            WHO WE SERVE
+            {sectionTag}
           </div>
           <h2 className="m-0 text-[30px] sm:text-[36px] md:text-[42px] font-extrabold text-[#0B1B4D] tracking-[-1px] leading-[1.15]">
-            Organizations that have outgrown spreadsheets
+            {sectionTitle}
           </h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
           {segments.map((segment, idx) => {
-            const Icon = segment.icon;
+            const Icon = icons[idx % icons.length];
             return (
               <Card
                 key={idx}

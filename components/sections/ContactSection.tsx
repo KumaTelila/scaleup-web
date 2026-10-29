@@ -13,12 +13,14 @@ import {
 } from "@/components/ui/select";
 import { Mail, Phone, MapPin, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { ContactContent } from "@/lib/types";
 
 interface ContactSectionProps {
   selectedNeed?: string;
+  content?: Partial<ContactContent>;
 }
 
-export function ContactSection({ selectedNeed = "ERP (Odoo)" }: ContactSectionProps) {
+export function ContactSection({ selectedNeed = "ERP (Odoo)", content }: ContactSectionProps) {
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [phone, setPhone] = React.useState("");
@@ -28,6 +30,17 @@ export function ContactSection({ selectedNeed = "ERP (Odoo)" }: ContactSectionPr
   const [loading, setLoading] = React.useState(false);
   const [submitted, setSubmitted] = React.useState(false);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
+
+  const sectionTag = content?.sectionTag || "GET IN TOUCH";
+  const title = content?.title || "Ready to scale your operations?";
+  const subtitle = content?.subtitle || "Tell us about your business and we will reply with a clear next step.";
+  const displayEmail = content?.email || "info@scaleuptech.et";
+  const displayPhone = content?.phone || "+251 91 123 4567";
+  const displayOffice = content?.office || "Addis Ababa, Ethiopia";
+  const guaranteeTitle = content?.guaranteeTitle || "ScaleUp Tech Guarantee:";
+  const guaranteeText =
+    content?.guaranteeText ||
+    "Every engagement starts with documented requirements, fixed scope estimates, and direct engineering accountability.";
 
   React.useEffect(() => {
     if (selectedNeed) {
@@ -104,36 +117,36 @@ export function ContactSection({ selectedNeed = "ERP (Odoo)" }: ContactSectionPr
         {/* Left Column Information */}
         <div className="flex-1 min-w-0 flex flex-col gap-5">
           <div className="text-[13px] font-bold tracking-[2px] text-[#8EC3FF] uppercase">
-            GET IN TOUCH
+            {sectionTag}
           </div>
 
           <h2 className="m-0 text-[30px] sm:text-[36px] md:text-[44px] font-extrabold tracking-[-1px] leading-[1.15] text-white">
-            Ready to scale your operations?
+            {title}
           </h2>
 
           <p className="m-0 text-[17px] text-[#C9D8F5] leading-relaxed">
-            Tell us about your business and we will reply with a clear next step.
+            {subtitle}
           </p>
 
           <div className="flex flex-col gap-3.5 text-base font-medium pt-3 text-slate-100">
             <div className="flex items-center gap-3">
               <Mail className="w-5 h-5 text-[#8EC3FF]" />
-              <span>Email: info@scaleuptech.et</span>
+              <span>Email: {displayEmail}</span>
             </div>
             <div className="flex items-center gap-3">
               <Phone className="w-5 h-5 text-[#8EC3FF]" />
-              <span>Phone: +251 91 123 4567</span>
+              <span>Phone: {displayPhone}</span>
             </div>
             <div className="flex items-center gap-3">
               <MapPin className="w-5 h-5 text-[#8EC3FF]" />
-              <span>Office: Addis Ababa, Ethiopia</span>
+              <span>Office: {displayOffice}</span>
             </div>
           </div>
 
           <div className="mt-4 p-5 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/15 max-w-[420px]">
             <p className="text-sm text-slate-200 m-0">
-              <strong className="text-white block mb-1">ScaleUp Tech Guarantee:</strong>
-              Every engagement starts with documented requirements, fixed scope estimates, and direct engineering accountability.
+              <strong className="text-white block mb-1">{guaranteeTitle}</strong>
+              {guaranteeText}
             </p>
           </div>
         </div>

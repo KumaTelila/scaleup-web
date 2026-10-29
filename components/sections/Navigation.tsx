@@ -4,13 +4,14 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ShieldCheck } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 interface NavigationProps {
   onOpenConsultation?: () => void;
+  ctaText?: string;
 }
 
-export function Navigation({ onOpenConsultation }: NavigationProps) {
+export function Navigation({ onOpenConsultation, ctaText = "Book a consultation" }: NavigationProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   return (
@@ -40,10 +41,10 @@ export function Navigation({ onOpenConsultation }: NavigationProps) {
           </span>
         </Link>
 
-        {/* Desktop Nav */}
+        {/* Desktop Nav - Clean, professional, customer-focused without internal Admin link */}
         <nav
           aria-label="Main"
-          className="hidden md:flex items-center gap-7 lg:gap-8 text-[15px] font-semibold text-[#0B1B4D]"
+          className="hidden md:flex items-center gap-8 lg:gap-9 text-[15px] font-semibold text-[#0B1B4D]"
         >
           <a
             href="#services"
@@ -69,19 +70,11 @@ export function Navigation({ onOpenConsultation }: NavigationProps) {
           >
             Clients
           </a>
-          <Link
-            href="/admin"
-            className="flex items-center gap-1.5 text-xs text-[#44546F] hover:text-[#0B5FD9] px-2.5 py-1 rounded-md hover:bg-white/60 transition-colors"
-            title="Backend Management Portal"
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-[#0B5FD9]" />
-            <span>Admin</span>
-          </Link>
           <Button
             onClick={onOpenConsultation}
-            className="bg-[#0B5FD9] hover:bg-[#084db3] text-white px-5 py-2.5 rounded-full font-bold text-sm shadow-sm transition-all"
+            className="bg-[#0B5FD9] hover:bg-[#084db3] text-white px-6 py-2.5 rounded-full font-bold text-sm shadow-sm transition-all"
           >
-            Book a consultation
+            {ctaText}
           </Button>
         </nav>
 
@@ -106,39 +99,31 @@ export function Navigation({ onOpenConsultation }: NavigationProps) {
             <a
               href="#services"
               onClick={() => setMobileMenuOpen(false)}
-              className="py-2 border-b border-slate-100 hover:text-[#0B5FD9]"
+              className="py-2.5 border-b border-slate-100 hover:text-[#0B5FD9]"
             >
               Services
             </a>
             <a
               href="#why"
               onClick={() => setMobileMenuOpen(false)}
-              className="py-2 border-b border-slate-100 hover:text-[#0B5FD9]"
+              className="py-2.5 border-b border-slate-100 hover:text-[#0B5FD9]"
             >
               Why ScaleUp
             </a>
             <a
               href="#process"
               onClick={() => setMobileMenuOpen(false)}
-              className="py-2 border-b border-slate-100 hover:text-[#0B5FD9]"
+              className="py-2.5 border-b border-slate-100 hover:text-[#0B5FD9]"
             >
               Process
             </a>
             <a
               href="#clients"
               onClick={() => setMobileMenuOpen(false)}
-              className="py-2 border-b border-slate-100 hover:text-[#0B5FD9]"
+              className="py-2.5 border-b border-slate-100 hover:text-[#0B5FD9]"
             >
               Clients
             </a>
-            <Link
-              href="/admin"
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-2 flex items-center gap-2 text-sm text-[#44546F] hover:text-[#0B5FD9]"
-            >
-              <ShieldCheck className="w-4 h-4 text-[#0B5FD9]" />
-              <span>Admin Portal</span>
-            </Link>
             <div className="pt-2">
               <Button
                 onClick={() => {
@@ -147,7 +132,7 @@ export function Navigation({ onOpenConsultation }: NavigationProps) {
                 }}
                 className="w-full bg-[#0B5FD9] hover:bg-[#084db3] text-white py-3 rounded-full font-bold"
               >
-                Book a consultation
+                {ctaText}
               </Button>
             </div>
           </nav>

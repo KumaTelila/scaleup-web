@@ -27,3 +27,5 @@ next-env.d.ts
 
 # temp files
 unpacked_template.html
+
+node_modules

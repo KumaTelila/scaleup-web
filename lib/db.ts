@@ -1,37 +1,19 @@
 import fs from "fs";
 import path from "path";
+import {
+  ContactInquiry,
+  ConsultationBooking,
+  SiteContent,
+  DEFAULT_SITE_CONTENT,
+} from "./types";
 
-export interface ContactInquiry {
-  id: string;
-  name: string;
-  email: string;
-  need: string;
-  message: string;
-  phone?: string;
-  company?: string;
-  status: "new" | "in_review" | "contacted" | "archived";
-  createdAt: string;
-  ip?: string;
-}
-
-export interface ConsultationBooking {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  company?: string;
-  date: string;
-  time?: string;
-  service: string;
-  notes?: string;
-  status: "confirmed" | "pending" | "completed" | "cancelled";
-  createdAt: string;
-}
+export * from "./types";
 
 export interface DatabaseSchema {
   inquiries: ContactInquiry[];
   consultations: ConsultationBooking[];
   newsletter: { email: string; createdAt: string }[];
+  content?: SiteContent;
 }
 
 const DATA_DIR = path.join(process.cwd(), "data");
@@ -100,6 +82,7 @@ const INITIAL_DATA: DatabaseSchema = {
   newsletter: [
     { email: "tech-lead@ethiopianfintech.com", createdAt: new Date().toISOString() },
   ],
+  content: DEFAULT_SITE_CONTENT,
 };
 
 function readDb(): DatabaseSchema {
@@ -110,7 +93,11 @@ function readDb(): DatabaseSchema {
       return INITIAL_DATA;
     }
     const raw = fs.readFileSync(DB_FILE, "utf-8");
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    if (!parsed.content) {
+      parsed.content = DEFAULT_SITE_CONTENT;
+    }
+    return parsed;
   } catch (error) {
     console.error("Error reading database:", error);
     return INITIAL_DATA;
@@ -126,6 +113,7 @@ function writeDb(data: DatabaseSchema): void {
   }
 }
 
+// Inquiries methods
 export function getInquiries(): ContactInquiry[] {
   const db = readDb();
   return db.inquiries.sort(
@@ -173,6 +161,7 @@ export function deleteInquiry(id: string): boolean {
   return false;
 }
 
+// Consultations methods
 export function getConsultations(): ConsultationBooking[] {
   const db = readDb();
   return db.consultations.sort(
@@ -196,6 +185,42 @@ export function createConsultation(
   return newBooking;
 }
 
+export function updateConsultationStatus(
+  id: string,
+  status: ConsultationBooking["status"]
+): ConsultationBooking | null {
+  const db = readDb();
+  const index = db.consultations.findIndex((c) => c.id === id);
+  if (index === -1) return null;
+
+  db.consultations[index].status = status;
+  writeDb(db);
+  return db.consultations[index];
+}
+
+// Site Content CMS methods
+export function getSiteContent(): SiteContent {
+  const db = readDb();
+  return db.content || DEFAULT_SITE_CONTENT;
+}
+
+export function updateSiteContent(newContent: Partial<SiteContent>): SiteContent {
+  const db = readDb();
+  db.content = {
+    ...(db.content || DEFAULT_SITE_CONTENT),
+    ...newContent,
+  };
+  writeDb(db);
+  return db.content;
+}
+
+export function resetSiteContent(): SiteContent {
+  const db = readDb();
+  db.content = JSON.parse(JSON.stringify(DEFAULT_SITE_CONTENT));
+  writeDb(db);
+  return db.content as SiteContent;
+}
+
 export function getStats() {
   const db = readDb();
   return {
@@ -207,7 +232,9 @@ export function getStats() {
       consulting: db.inquiries.filter((i) => i.need.includes("consulting")).length,
       web: db.inquiries.filter((i) => i.need.includes("Web")).length,
       mobile: db.inquiries.filter((i) => i.need.includes("Mobile")).length,
-      infrastructure: db.inquiries.filter((i) => i.need.includes("infrastructure") || i.need.includes("Network")).length,
+      infrastructure: db.inquiries.filter(
+        (i) => i.need.includes("infrastructure") || i.need.includes("Network")
+      ).length,
     },
     uptime: "99.98%",
     averageResponseTime: "< 2 hours",

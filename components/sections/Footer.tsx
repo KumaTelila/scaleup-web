@@ -3,9 +3,19 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ShieldCheck } from "lucide-react";
+import { Lock } from "lucide-react";
 
-export function Footer() {
+interface FooterProps {
+  companyName?: string;
+  tagline?: string;
+  copyright?: string;
+}
+
+export function Footer({
+  companyName = "ScaleUp Tech PLC",
+  tagline = "Scaling businesses through smart software and digital innovation.",
+  copyright = "© 2026 ScaleUp Tech PLC. All rights reserved.",
+}: FooterProps) {
   return (
     <footer className="bg-[#FFFFFF] border-t border-[#DCE7F7] w-full">
       <div className="max-w-[1200px] mx-auto px-6 md:px-8 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
@@ -21,15 +31,15 @@ export function Footer() {
           </div>
           <div className="flex flex-col">
             <span className="text-base font-extrabold text-[#0B1B4D]">
-              ScaleUp Tech PLC
+              {companyName}
             </span>
             <span className="text-sm text-[#44546F]">
-              Scaling businesses through smart software and digital innovation.
+              {tagline}
             </span>
           </div>
         </div>
 
-        {/* Links & Admin access */}
+        {/* Links */}
         <div className="flex flex-wrap items-center gap-6 text-sm text-[#44546F]">
           <a href="#services" className="hover:text-[#0B5FD9] transition-colors">
             Services
@@ -43,15 +53,16 @@ export function Footer() {
           <a href="#clients" className="hover:text-[#0B5FD9] transition-colors">
             Clients
           </a>
-          <Link
-            href="/admin"
-            className="flex items-center gap-1 hover:text-[#0B5FD9] font-medium transition-colors"
-          >
-            <ShieldCheck className="w-4 h-4 text-[#0B5FD9]" />
-            <span>Admin Portal</span>
-          </Link>
-          <div className="text-sm text-[#44546F]">
-            © 2026 ScaleUp Tech PLC. All rights reserved.
+          <div className="flex items-center gap-3 text-sm text-[#44546F]">
+            <span>{copyright}</span>
+            <Link
+              href="/admin"
+              className="text-slate-300 hover:text-slate-500 transition-colors p-1"
+              title="Management Console"
+              aria-label="Management Console"
+            >
+              <Lock className="w-3.5 h-3.5" />
+            </Link>
           </div>
         </div>
       </div>

@@ -1,9 +1,17 @@
 "use client";
 
 import * as React from "react";
+import { WhyUsContent } from "@/lib/types";
 
-export function WhyUs() {
-  const pillars = [
+interface WhyUsProps {
+  content?: Partial<WhyUsContent>;
+}
+
+export function WhyUs({ content }: WhyUsProps) {
+  const sectionTag = content?.sectionTag || "WHY SCALEUP";
+  const sectionTitle =
+    content?.sectionTitle || "Enterprise-grade delivery with local understanding";
+  const pillars = content?.items || [
     {
       number: "01",
       title: "Built for your context",
@@ -29,10 +37,10 @@ export function WhyUs() {
       <div className="max-w-[1200px] mx-auto px-6 md:px-8 py-20 md:py-24 flex flex-col gap-12">
         <div className="flex flex-col gap-3 max-w-[720px]">
           <div className="text-[13px] font-bold tracking-[2px] text-[#0B5FD9] uppercase">
-            WHY SCALEUP
+            {sectionTag}
           </div>
           <h2 className="m-0 text-[30px] sm:text-[36px] md:text-[42px] font-extrabold text-[#0B1B4D] tracking-[-1px] leading-[1.15]">
-            Enterprise-grade delivery with local understanding
+            {sectionTitle}
           </h2>
         </div>
 
