@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const inquiry = createInquiry({
+    const inquiry = await createInquiry({
       name: name.trim(),
       email: email.trim().toLowerCase(),
       need: need || "ERP (Odoo)",
@@ -50,9 +50,9 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    const inquiries = getInquiries();
+    const inquiries = await getInquiries();
     return NextResponse.json({ success: true, inquiries });
   } catch (error) {
     return NextResponse.json(
@@ -73,7 +73,7 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const updated = updateInquiryStatus(id, status);
+    const updated = await updateInquiryStatus(id, status);
     if (!updated) {
       return NextResponse.json(
         { success: false, error: "Inquiry not found." },
@@ -101,7 +101,7 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    const deleted = deleteInquiry(id);
+    const deleted = await deleteInquiry(id);
     return NextResponse.json({ success: deleted });
   } catch (error) {
     return NextResponse.json(
@@ -110,4 +110,3 @@ export async function DELETE(req: NextRequest) {
     );
   }
 }
-

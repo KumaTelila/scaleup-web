@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const booking = createConsultation({
+    const booking = await createConsultation({
       name: name.trim(),
       email: email.trim().toLowerCase(),
       phone: phone ? phone.trim() : undefined,
@@ -52,9 +52,9 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    const bookings = getConsultations();
+    const bookings = await getConsultations();
     return NextResponse.json({ success: true, consultations: bookings });
   } catch (error) {
     return NextResponse.json(
@@ -63,4 +63,3 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-

@@ -3,7 +3,7 @@ import { getSiteContent, updateSiteContent, resetSiteContent } from "@/lib/db";
 
 export async function GET() {
   try {
-    const content = getSiteContent();
+    const content = await getSiteContent();
     return NextResponse.json({ success: true, content });
   } catch (error) {
     return NextResponse.json(
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const updated = updateSiteContent(body);
+    const updated = await updateSiteContent(body);
     return NextResponse.json({
       success: true,
       message: "Website content updated successfully!",
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE() {
   try {
-    const reset = resetSiteContent();
+    const reset = await resetSiteContent();
     return NextResponse.json({
       success: true,
       message: "Website content reset to factory defaults.",

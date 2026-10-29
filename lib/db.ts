@@ -1,3 +1,4 @@
+import { neon } from "@neondatabase/serverless";
 import fs from "fs";
 import path from "path";
 import {
@@ -19,224 +20,421 @@ export interface DatabaseSchema {
 const DATA_DIR = path.join(process.cwd(), "data");
 const DB_FILE = path.join(DATA_DIR, "scaleup_store.json");
 
+// Neon Connection
+function getSql() {
+  const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+  if (!connectionString) return null;
+  return neon(connectionString);
+}
+
+// Auto-initialize Neon PostgreSQL tables if connecting for the first time
+let tablesInitialized = false;
+async function ensureTables(sql: any) {
+  if (tablesInitialized) return;
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS inquiries (
+        id VARCHAR(100) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        need VARCHAR(100) NOT NULL,
+        message TEXT NOT NULL,
+        phone VARCHAR(50),
+        company VARCHAR(255),
+        status VARCHAR(50) DEFAULT 'new',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `;
+    await sql`
+      CREATE TABLE IF NOT EXISTS consultations (
+        id VARCHAR(100) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        phone VARCHAR(50),
+        company VARCHAR(255),
+        date VARCHAR(50) NOT NULL,
+        time VARCHAR(50),
+        service VARCHAR(100),
+        notes TEXT,
+        status VARCHAR(50) DEFAULT 'pending',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `;
+    await sql`
+      CREATE TABLE IF NOT EXISTS site_content (
+        id VARCHAR(50) PRIMARY KEY,
+        data JSONB NOT NULL,
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `;
+    tablesInitialized = true;
+  } catch (err) {
+    console.error("Neon table check error:", err);
+  }
+}
+
+// Fallback: local file store
 function ensureDirectoryExists() {
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
   }
 }
 
-const INITIAL_DATA: DatabaseSchema = {
-  inquiries: [
-    {
-      id: "inq-1",
-      name: "Alemayehu Tadesse",
-      email: "alemayehu@abyssiniatrading.et",
-      phone: "+251 91 123 4567",
-      company: "Abyssinia Trading & Distribution",
-      need: "ERP (Odoo)",
-      message:
-        "We are currently managing inventory across 4 warehouses in Addis Ababa with Excel and disconnected software. We want to implement Odoo 17 Enterprise for sales, inventory, local invoicing, and bank reconciliations.",
-      status: "new",
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-    },
-    {
-      id: "inq-2",
-      name: "Bethlehem Assefa",
-      email: "b.assefa@zemenlogistics.com",
-      phone: "+251 92 345 6789",
-      company: "Zemen Logistics Solutions",
-      need: "Web application",
-      message:
-        "We need a custom shipment tracking and client portal integrated with our internal operational systems and SMS notifications.",
-      status: "in_review",
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4).toISOString(),
-    },
-    {
-      id: "inq-3",
-      name: "Dr. Dawit Hailu",
-      email: "dhailu@oromiahealth.gov.et",
-      phone: "+251 93 456 7890",
-      company: "Regional Health Bureau",
-      need: "Networking and infrastructure",
-      message:
-        "Reviewing network architecture, secure server backup protocols, and cloud migration for regional monitoring data.",
-      status: "contacted",
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(),
-    },
-  ],
-  consultations: [
-    {
-      id: "cons-1",
-      name: "Tewodros Kassahun",
-      email: "tk@finetextextiles.et",
-      phone: "+251 91 222 3344",
-      company: "FineTex Manufacturing",
-      date: "2026-11-02",
-      time: "10:00 AM",
-      service: "ERP (Odoo)",
-      notes: "Manufacturing module and bill of materials setup.",
-      status: "confirmed",
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(),
-    },
-  ],
-  newsletter: [
-    { email: "tech-lead@ethiopianfintech.com", createdAt: new Date().toISOString() },
-  ],
-  content: DEFAULT_SITE_CONTENT,
-};
-
-function readDb(): DatabaseSchema {
+function readLocalDb(): DatabaseSchema {
   try {
     ensureDirectoryExists();
     if (!fs.existsSync(DB_FILE)) {
-      fs.writeFileSync(DB_FILE, JSON.stringify(INITIAL_DATA, null, 2), "utf-8");
-      return INITIAL_DATA;
+      return {
+        inquiries: [],
+        consultations: [],
+        newsletter: [],
+        content: DEFAULT_SITE_CONTENT,
+      };
     }
     const raw = fs.readFileSync(DB_FILE, "utf-8");
     const parsed = JSON.parse(raw);
-    if (!parsed.content) {
-      parsed.content = DEFAULT_SITE_CONTENT;
-    }
+    if (!parsed.content) parsed.content = DEFAULT_SITE_CONTENT;
     return parsed;
   } catch (error) {
-    console.error("Error reading database:", error);
-    return INITIAL_DATA;
+    return {
+      inquiries: [],
+      consultations: [],
+      newsletter: [],
+      content: DEFAULT_SITE_CONTENT,
+    };
   }
 }
 
-function writeDb(data: DatabaseSchema): void {
+function writeLocalDb(data: DatabaseSchema): void {
   try {
     ensureDirectoryExists();
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), "utf-8");
   } catch (error) {
-    console.error("Error writing database:", error);
+    console.error("Local DB write error:", error);
   }
 }
 
-// Inquiries methods
-export function getInquiries(): ContactInquiry[] {
-  const db = readDb();
+// ================= INQUIRIES =================
+export async function getInquiries(): Promise<ContactInquiry[]> {
+  const sql = getSql();
+  if (sql) {
+    try {
+      await ensureTables(sql);
+      const rows = await sql`
+        SELECT * FROM inquiries ORDER BY created_at DESC
+      `;
+      return rows.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        email: r.email,
+        need: r.need,
+        message: r.message,
+        phone: r.phone || undefined,
+        company: r.company || undefined,
+        status: r.status as ContactInquiry["status"],
+        createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+      }));
+    } catch (err) {
+      console.error("Neon getInquiries error, falling back to local:", err);
+    }
+  }
+
+  const db = readLocalDb();
   return db.inquiries.sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 }
 
-export function createInquiry(
+export async function createInquiry(
   data: Omit<ContactInquiry, "id" | "status" | "createdAt">
-): ContactInquiry {
-  const db = readDb();
+): Promise<ContactInquiry> {
+  const id = `inq-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+  const createdAt = new Date().toISOString();
+
+  const sql = getSql();
+  if (sql) {
+    try {
+      await ensureTables(sql);
+      await sql`
+        INSERT INTO inquiries (id, name, email, need, message, phone, company, status, created_at)
+        VALUES (
+          ${id},
+          ${data.name},
+          ${data.email},
+          ${data.need},
+          ${data.message},
+          ${data.phone || null},
+          ${data.company || null},
+          'new',
+          ${createdAt}
+        )
+      `;
+      return {
+        id,
+        ...data,
+        status: "new",
+        createdAt,
+      };
+    } catch (err) {
+      console.error("Neon createInquiry error, falling back to local:", err);
+    }
+  }
+
+  const db = readLocalDb();
   const newInquiry: ContactInquiry = {
     ...data,
-    id: `inq-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+    id,
     status: "new",
-    createdAt: new Date().toISOString(),
+    createdAt,
   };
-
   db.inquiries.unshift(newInquiry);
-  writeDb(db);
+  writeLocalDb(db);
   return newInquiry;
 }
 
-export function updateInquiryStatus(
+export async function updateInquiryStatus(
   id: string,
   status: ContactInquiry["status"]
-): ContactInquiry | null {
-  const db = readDb();
+): Promise<ContactInquiry | null> {
+  const sql = getSql();
+  if (sql) {
+    try {
+      await ensureTables(sql);
+      const rows = await sql`
+        UPDATE inquiries SET status = ${status} WHERE id = ${id} RETURNING *
+      `;
+      if (rows.length === 0) return null;
+      const r = rows[0];
+      return {
+        id: r.id,
+        name: r.name,
+        email: r.email,
+        need: r.need,
+        message: r.message,
+        phone: r.phone || undefined,
+        company: r.company || undefined,
+        status: r.status as ContactInquiry["status"],
+        createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+      };
+    } catch (err) {
+      console.error("Neon updateInquiryStatus error, falling back to local:", err);
+    }
+  }
+
+  const db = readLocalDb();
   const index = db.inquiries.findIndex((i) => i.id === id);
   if (index === -1) return null;
-
   db.inquiries[index].status = status;
-  writeDb(db);
+  writeLocalDb(db);
   return db.inquiries[index];
 }
 
-export function deleteInquiry(id: string): boolean {
-  const db = readDb();
+export async function deleteInquiry(id: string): Promise<boolean> {
+  const sql = getSql();
+  if (sql) {
+    try {
+      await ensureTables(sql);
+      await sql`DELETE FROM inquiries WHERE id = ${id}`;
+      return true;
+    } catch (err) {
+      console.error("Neon deleteInquiry error, falling back to local:", err);
+    }
+  }
+
+  const db = readLocalDb();
   const originalLength = db.inquiries.length;
   db.inquiries = db.inquiries.filter((i) => i.id !== id);
   if (db.inquiries.length !== originalLength) {
-    writeDb(db);
+    writeLocalDb(db);
     return true;
   }
   return false;
 }
 
-// Consultations methods
-export function getConsultations(): ConsultationBooking[] {
-  const db = readDb();
+// ================= CONSULTATIONS =================
+export async function getConsultations(): Promise<ConsultationBooking[]> {
+  const sql = getSql();
+  if (sql) {
+    try {
+      await ensureTables(sql);
+      const rows = await sql`
+        SELECT * FROM consultations ORDER BY created_at DESC
+      `;
+      return rows.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        email: r.email,
+        phone: r.phone || undefined,
+        company: r.company || undefined,
+        date: r.date,
+        time: r.time || undefined,
+        service: r.service,
+        notes: r.notes || undefined,
+        status: r.status as ConsultationBooking["status"],
+        createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+      }));
+    } catch (err) {
+      console.error("Neon getConsultations error, falling back to local:", err);
+    }
+  }
+
+  const db = readLocalDb();
   return db.consultations.sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 }
 
-export function createConsultation(
+export async function createConsultation(
   data: Omit<ConsultationBooking, "id" | "status" | "createdAt">
-): ConsultationBooking {
-  const db = readDb();
+): Promise<ConsultationBooking> {
+  const id = `cons-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+  const createdAt = new Date().toISOString();
+
+  const sql = getSql();
+  if (sql) {
+    try {
+      await ensureTables(sql);
+      await sql`
+        INSERT INTO consultations (id, name, email, phone, company, date, time, service, notes, status, created_at)
+        VALUES (
+          ${id},
+          ${data.name},
+          ${data.email},
+          ${data.phone || null},
+          ${data.company || null},
+          ${data.date},
+          ${data.time || null},
+          ${data.service},
+          ${data.notes || null},
+          'pending',
+          ${createdAt}
+        )
+      `;
+      return {
+        id,
+        ...data,
+        status: "pending",
+        createdAt,
+      };
+    } catch (err) {
+      console.error("Neon createConsultation error, falling back to local:", err);
+    }
+  }
+
+  const db = readLocalDb();
   const newBooking: ConsultationBooking = {
     ...data,
-    id: `cons-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+    id,
     status: "pending",
-    createdAt: new Date().toISOString(),
+    createdAt,
   };
-
   db.consultations.unshift(newBooking);
-  writeDb(db);
+  writeLocalDb(db);
   return newBooking;
 }
 
-export function updateConsultationStatus(
-  id: string,
-  status: ConsultationBooking["status"]
-): ConsultationBooking | null {
-  const db = readDb();
-  const index = db.consultations.findIndex((c) => c.id === id);
-  if (index === -1) return null;
+// ================= SITE CONTENT (CMS) =================
+export async function getSiteContent(): Promise<SiteContent> {
+  const sql = getSql();
+  if (sql) {
+    try {
+      await ensureTables(sql);
+      const rows = await sql`
+        SELECT data FROM site_content WHERE id = 'current'
+      `;
+      if (rows.length > 0 && rows[0].data) {
+        return rows[0].data as SiteContent;
+      }
+      // Seed default in Neon
+      await sql`
+        INSERT INTO site_content (id, data, updated_at)
+        VALUES ('current', ${JSON.stringify(DEFAULT_SITE_CONTENT)}, NOW())
+        ON CONFLICT (id) DO NOTHING
+      `;
+      return DEFAULT_SITE_CONTENT;
+    } catch (err) {
+      console.error("Neon getSiteContent error, falling back to local:", err);
+    }
+  }
 
-  db.consultations[index].status = status;
-  writeDb(db);
-  return db.consultations[index];
-}
-
-// Site Content CMS methods
-export function getSiteContent(): SiteContent {
-  const db = readDb();
+  const db = readLocalDb();
   return db.content || DEFAULT_SITE_CONTENT;
 }
 
-export function updateSiteContent(newContent: Partial<SiteContent>): SiteContent {
-  const db = readDb();
-  db.content = {
-    ...(db.content || DEFAULT_SITE_CONTENT),
+export async function updateSiteContent(newContent: Partial<SiteContent>): Promise<SiteContent> {
+  const current = await getSiteContent();
+  const updated: SiteContent = {
+    ...current,
     ...newContent,
   };
-  writeDb(db);
-  return db.content;
+
+  const sql = getSql();
+  if (sql) {
+    try {
+      await ensureTables(sql);
+      await sql`
+        INSERT INTO site_content (id, data, updated_at)
+        VALUES ('current', ${JSON.stringify(updated)}, NOW())
+        ON CONFLICT (id) DO UPDATE SET data = ${JSON.stringify(updated)}, updated_at = NOW()
+      `;
+      return updated;
+    } catch (err) {
+      console.error("Neon updateSiteContent error, falling back to local:", err);
+    }
+  }
+
+  const db = readLocalDb();
+  db.content = updated;
+  writeLocalDb(db);
+  return updated;
 }
 
-export function resetSiteContent(): SiteContent {
-  const db = readDb();
+export async function resetSiteContent(): Promise<SiteContent> {
+  const sql = getSql();
+  if (sql) {
+    try {
+      await ensureTables(sql);
+      await sql`
+        INSERT INTO site_content (id, data, updated_at)
+        VALUES ('current', ${JSON.stringify(DEFAULT_SITE_CONTENT)}, NOW())
+        ON CONFLICT (id) DO UPDATE SET data = ${JSON.stringify(DEFAULT_SITE_CONTENT)}, updated_at = NOW()
+      `;
+      return DEFAULT_SITE_CONTENT;
+    } catch (err) {
+      console.error("Neon resetSiteContent error, falling back to local:", err);
+    }
+  }
+
+  const db = readLocalDb();
   db.content = JSON.parse(JSON.stringify(DEFAULT_SITE_CONTENT));
-  writeDb(db);
+  writeLocalDb(db);
   return db.content as SiteContent;
 }
 
-export function getStats() {
-  const db = readDb();
+// ================= STATS =================
+export async function getStats() {
+  const [inquiries, consultations] = await Promise.all([
+    getInquiries(),
+    getConsultations(),
+  ]);
+
+  const isPostgres = Boolean(process.env.DATABASE_URL || process.env.POSTGRES_URL);
+
   return {
-    totalInquiries: db.inquiries.length,
-    newInquiries: db.inquiries.filter((i) => i.status === "new").length,
-    activeConsultations: db.consultations.length,
+    totalInquiries: inquiries.length,
+    newInquiries: inquiries.filter((i) => i.status === "new").length,
+    activeConsultations: consultations.length,
     byService: {
-      odoo: db.inquiries.filter((i) => i.need.includes("Odoo") || i.need.includes("ERP")).length,
-      consulting: db.inquiries.filter((i) => i.need.includes("consulting")).length,
-      web: db.inquiries.filter((i) => i.need.includes("Web")).length,
-      mobile: db.inquiries.filter((i) => i.need.includes("Mobile")).length,
-      infrastructure: db.inquiries.filter(
+      odoo: inquiries.filter((i) => i.need.includes("Odoo") || i.need.includes("ERP")).length,
+      consulting: inquiries.filter((i) => i.need.includes("consulting")).length,
+      web: inquiries.filter((i) => i.need.includes("Web")).length,
+      mobile: inquiries.filter((i) => i.need.includes("Mobile")).length,
+      infrastructure: inquiries.filter(
         (i) => i.need.includes("infrastructure") || i.need.includes("Network")
       ).length,
     },
     uptime: "99.98%",
     averageResponseTime: "< 2 hours",
+    database: isPostgres ? "Neon PostgreSQL (Serverless)" : "Local Persistent JSON",
   };
 }

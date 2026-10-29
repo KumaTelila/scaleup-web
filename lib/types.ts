@@ -263,3 +263,4 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
       "Every engagement starts with documented requirements, fixed scope estimates, and direct engineering accountability.",
   },
 };
+

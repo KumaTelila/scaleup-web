@@ -1,16 +1,16 @@
-# ScaleUp Tech PLC — Enterprise Website & Operations Backend
+# ScaleUp Tech PLC — Enterprise Website, CMS & Operations Backend
 
-Modern, high-performance website and backend for **ScaleUp Tech PLC** built with **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS**, and **shadcn/ui** components.
+Modern, high-performance enterprise website, dynamic CMS, and operations platform for **ScaleUp Tech PLC** built with **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS**, and **shadcn/ui** components, backed by **Neon Serverless PostgreSQL** and prepared for seamless deployment on **Vercel**.
 
-This project faithfully preserves the original design, exact copy, brand identity, and color palette from `ScaleUp Tech PLC Website.html` while introducing a fully functional backend for lead capture, consultation scheduling, and administrative operations.
+This project faithfully preserves the original design, exact copy, brand identity, and color palette from `ScaleUp Tech PLC Website.html` while introducing a fully functional operations suite for lead capture, consultation scheduling, content management, and live database persistence.
 
 ---
 
 ## 🚀 Key Features
 
 ### 1. Pixel-Perfect HTML & Brand Preservation
-- **Header & Navigation**: Sticky header with logo mark, branded typography (`ScaleUp` in `#0B1B4D`, `Tech PLC` in `#0B5FD9`), smooth scroll anchors, and responsive mobile menu.
-- **Hero Section**: Tagline (`ODOO ERP · SOFTWARE · INFRASTRUCTURE`), headline, value proposition, CTAs, and SVG business growth illustration with floating badges.
+- **Header & Navigation**: Sticky clean header with logo mark, branded typography (`ScaleUp` in `#0B1B4D`, `Tech PLC` in `#0B5FD9`), smooth scroll anchors, and responsive mobile menu. **Customer-facing navigation is 100% clean with no internal admin links.**
+- **Hero Section**: Tagline (`ODOO ERP · SOFTWARE · INFRASTRUCTURE`), headline, value proposition, CTAs, and SVG business growth illustration with floating badges. Fully dynamic via Admin CMS.
 - **Services ("What We Do")**:
   - **Featured Card (Odoo ERP)**: Dark navy hero card with 5 delivery checkmarks and direct inquiry button.
   - **Secondary Cards**: IT Consulting, Web Applications, Mobile Applications, and Networking & Infrastructure.
@@ -18,7 +18,7 @@ This project faithfully preserves the original design, exact copy, brand identit
 - **Process ("How We Work")**: 5-stage delivery model (Discover, Design, Build, Launch, Run).
 - **Clients ("Who We Serve")**: Growing SMEs, Public-sector bodies, and Mid-size enterprises.
 - **Contact & Inquiries**: Branded gradient section with company contact details and interactive form.
-- **Footer**: Company overview, links, admin link, and copyright notice.
+- **Footer**: Company overview, links, discrete staff portal icon, and copyright notice.
 
 ### 2. shadcn/ui Components Integration
 - **`Button`**: Branded variants (`default`, `navy`, `outline`, `secondary`, `ghost`, `link`, `accent`).
@@ -27,47 +27,132 @@ This project faithfully preserves the original design, exact copy, brand identit
 - **`Select`**: Radix-powered dropdown with animated checkmarks and clean popover transitions.
 - **`Badge`**: Pill-shaped status indicators and service badges.
 - **`Dialog`**: Interactive discovery session scheduler modal.
+- **`Accordion`**: Collapsible FAQ & process expansion.
 - **`Toaster` (Sonner)**: Real-time feedback on inquiry submissions and status updates.
 
-### 3. Backend Architecture & Endpoints
-- **`POST /api/contact`**: Validates and records contact inquiries.
-- **`GET /api/contact`**: Returns list of inquiries (supports filtering).
-- **`PATCH /api/contact`**: Updates inquiry workflow status (`new`, `in_review`, `contacted`, `archived`).
-- **`DELETE /api/contact?id=...`**: Removes an inquiry.
-- **`POST /api/consultations`**: Books 30-minute discovery calls with date, time, and service selection.
-- **`GET /api/consultations`**: Retrieves booked appointments.
-- **`GET /api/stats`**: Live operational stats (total leads, open inquiries, service breakdown, SLAs).
+### 3. Professional Admin Portal & Content Management (`/admin`)
+- **Passcode Protected**: Secured behind an administrative authentication gate (`admin` or `scaleup2026`).
+- **Live Content Management System (CMS)**:
+  - Edit **Hero** title, tagline, description, badge text.
+  - Edit **Services** details, featured Odoo deliverables, and sub-services.
+  - Edit **Why Us** pillars and **Process** steps.
+  - Edit **Client** audience segments.
+  - Update **Contact** phone numbers, email addresses, and office locations.
+  - **One-click "Save Changes to Live Site"** with live persistence to Neon PostgreSQL.
+  - **"Reset to Defaults"** option to restore baseline company copy anytime.
+- **Inbound Leads CRM**:
+  - Search, filter by service or status, inspect customer messages.
+  - Live status updater (`new`, `in_review`, `contacted`, `archived`).
+  - One-click CSV export of inbound leads.
+- **Consultations Schedule Manager**:
+  - View all 30-minute discovery bookings with client company, date, time slot, and requirements.
+- **Analytics & Database Health**:
+  - Lead conversion metrics, service breakdown chart, response SLAs, and real-time database connection diagnostics.
 
-### 4. Admin Operations Portal (`/admin`)
-- Accessible directly via the navigation bar and footer.
-- Real-time dashboard showing incoming leads and booked consultations.
-- Interactive status changer (mark leads as In Review, Contacted, or Archived).
-- Search and filter by client name, company, email, or service focus.
+### 4. Neon Serverless PostgreSQL Database
+- Connected to **Neon Serverless PostgreSQL** via `@neondatabase/serverless` over HTTP/WebSocket pooling.
+- Zero serverless connection limits, cold-start resilience, and instant autoscaling.
+- Tables automatically managed:
+  - `inquiries`: Client contact submissions and CRM workflow states.
+  - `consultations`: Discovery call appointments and time slots.
+  - `site_content`: Dynamic CMS state persisted across all instances and deployments.
+- Automatic fallback to local store if running offline without an active internet connection.
+
+### 5. Backend REST API
+- **`POST /api/contact`**: Validates and records contact inquiries.
+- **`GET /api/contact`**: Returns list of inquiries (supports search & status filtering).
+- **`PATCH /api/contact`**: Updates inquiry workflow status.
+- **`DELETE /api/contact?id=...`**: Removes an inquiry.
+- **`POST /api/consultations`**: Books 30-minute discovery calls.
+- **`GET /api/consultations`**: Retrieves booked appointments.
+- **`GET /api/content`**: Fetches active site copy (from Neon or defaults).
+- **`POST /api/content`**: Saves updated site copy to Neon PostgreSQL.
+- **`DELETE /api/content`**: Resets content back to default company copy.
+- **`GET /api/stats`**: Live operational metrics and database engine identification.
 
 ---
 
-## 🛠️ Getting Started
+## 🛠️ Local Development
 
 ### Prerequisites
 - Node.js 18+ (tested with v24.12.0)
 - `pnpm` (or `npm`)
 
-### Installation & Run
-
-```bash
-# Start development server
-pnpm dev
-# (or specify port if 3000 is occupied: pnpm dev -p 3002)
-
-# Build for production
-pnpm build
-
-# Start production server
-pnpm start -p 3002
+### 1. Environment Setup
+Create a `.env.local` file in the project root:
+```env
+DATABASE_URL=postgresql://neondb_owner:REDACTED_SECRET@ep-dawn-paper-b80i7fqh-pooler.c-14.us-east-1.aws.neon.tech/neondb?sslmode=require
+POSTGRES_URL=postgresql://neondb_owner:REDACTED_SECRET@ep-dawn-paper-b80i7fqh-pooler.c-14.us-east-1.aws.neon.tech/neondb?sslmode=require
 ```
 
-Open [http://localhost:3002](http://localhost:3002) in your browser.
-Open [http://localhost:3002/admin](http://localhost:3002/admin) to view the Admin Operations Portal.
+### 2. Install & Run
+```bash
+# Install dependencies
+pnpm install
+
+# Start development server
+pnpm dev
+
+# Or build and test production bundle locally
+pnpm build
+pnpm start
+```
+
+- Main Landing Page: `http://localhost:3000`
+- Admin Operations & CMS: `http://localhost:3000/admin` (Passcode: `admin` or `scaleup2026`)
+
+---
+
+## ☁️ Deploying to Vercel
+
+The application is configured out-of-the-box for **Vercel** (`vercel.json` included). Follow these simple steps:
+
+### Option A: Deploy via GitHub (Recommended)
+
+1. **Push your repository to GitHub**:
+   ```bash
+   git add .
+   git commit -m "ScaleUp Tech PLC ready for Vercel deployment"
+   git push origin main
+   ```
+
+2. **Import into Vercel**:
+   - Go to [vercel.com](https://vercel.com) and log in.
+   - Click **"Add New..."** → **"Project"**.
+   - Select your `scaleup` repository and click **Import**.
+
+3. **Configure Environment Variables in Vercel**:
+   Under the **Environment Variables** section, add:
+   - `DATABASE_URL`:
+     ```
+     postgresql://neondb_owner:REDACTED_SECRET@ep-dawn-paper-b80i7fqh-pooler.c-14.us-east-1.aws.neon.tech/neondb?sslmode=require
+     ```
+   - `POSTGRES_URL`:
+     ```
+     postgresql://neondb_owner:REDACTED_SECRET@ep-dawn-paper-b80i7fqh-pooler.c-14.us-east-1.aws.neon.tech/neondb?sslmode=require
+     ```
+
+4. **Deploy**:
+   - Click **Deploy**. Vercel will build and deploy the Next.js App Router application in under a minute!
+
+---
+
+### Option B: Deploy via Vercel CLI
+
+```bash
+# Install Vercel CLI if needed
+npm i -g vercel
+
+# Log in and deploy
+vercel
+
+# Add environment variable to production
+vercel env add DATABASE_URL production
+vercel env add POSTGRES_URL production
+
+# Deploy to production
+vercel --prod
+```
 
 ---
 
@@ -76,25 +161,26 @@ Open [http://localhost:3002/admin](http://localhost:3002/admin) to view the Admi
 ```
 scaleup/
 ├── app/
-│   ├── admin/page.tsx             # Admin operations dashboard
+│   ├── admin/page.tsx             # Professional Admin portal & Dynamic CMS
 │   ├── api/
-│   │   ├── contact/route.ts       # Contact form API
+│   │   ├── contact/route.ts       # Contact form API (CRUD)
 │   │   ├── consultations/route.ts # Consultation booking API
-│   │   └── stats/route.ts         # Operational metrics API
-│   ├── globals.css                # Tailwind directives & CSS variables
-│   ├── layout.tsx                 # Root layout & Montserrat font
-│   └── page.tsx                   # Main company landing page
+│   │   ├── content/route.ts       # Site content CMS API
+│   │   └── stats/route.ts         # Operational metrics & DB health API
+│   ├── globals.css                # Tailwind directives & CSS design system
+│   ├── layout.tsx                 # Root layout & Montserrat font configuration
+│   └── page.tsx                   # Main company landing page (live CMS consumer)
 ├── components/
 │   ├── sections/
-│   │   ├── Navigation.tsx         # Header navigation & mobile drawer
-│   │   ├── Hero.tsx               # Hero banner & growth graphic
-│   │   ├── Services.tsx           # 5 core services & Odoo highlight
-│   │   ├── WhyUs.tsx              # 3 key differentiators
+│   │   ├── Navigation.tsx         # Clean customer header (no admin link)
+│   │   ├── Hero.tsx               # Hero banner & dynamic growth chart
+│   │   ├── Services.tsx           # 5 core services & featured Odoo highlight
+│   │   ├── WhyUs.tsx              # 3 key value pillars
 │   │   ├── Process.tsx            # 5-step delivery process
 │   │   ├── Clients.tsx            # Target client segments
 │   │   ├── ContactSection.tsx     # Inquiries form with live API
 │   │   ├── ConsultationModal.tsx  # shadcn Dialog booking modal
-│   │   └── Footer.tsx             # Footer & company details
+│   │   └── Footer.tsx             # Footer & discrete staff portal icon
 │   └── ui/                        # shadcn/ui components
 │       ├── button.tsx
 │       ├── card.tsx
@@ -105,16 +191,23 @@ scaleup/
 │       ├── dialog.tsx
 │       ├── accordion.tsx
 │       └── sonner.tsx
-├── data/
-│   └── scaleup_store.json         # Persistent JSON database
 ├── lib/
-│   ├── db.ts                      # Backend database controller
+│   ├── db.ts                      # Neon PostgreSQL database engine with pooling
+│   ├── types.ts                   # Type definitions & default site content
 │   └── utils.ts                   # Tailwind merge & clsx utility
 ├── public/
 │   └── images/                    # Company logos and banners
+├── vercel.json                    # Vercel deployment configuration
+├── .env.example                   # Neon connection template
 ├── tailwind.config.ts
 ├── tsconfig.json
 └── package.json
 ```
 
-# ScaleUp-website
+---
+
+## 🛡️ Security & Administration
+
+- The public navigation bar contains zero links to administration routes.
+- Access to the Content Management System and CRM is located at `/admin` and protected by passcode authentication.
+- For discreet access from the main website, staff can click the small lock icon in the footer next to the copyright text.
