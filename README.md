@@ -211,3 +211,4 @@ scaleup/
 - The public navigation bar contains zero links to administration routes.
 - Access to the Content Management System and CRM is located at `/admin` and protected by passcode authentication.
 - For discreet access from the main website, staff can click the small lock icon in the footer next to the copyright text.
+# scaleup-web
