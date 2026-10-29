@@ -447,3 +447,4 @@ export async function getAuthenticatedAdmin(
   const result = await validateSession(token);
   return result.valid && result.user ? result.user : null;
 }
+
