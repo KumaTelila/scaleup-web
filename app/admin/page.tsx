@@ -497,18 +497,6 @@ export default function AdminPage() {
               )}
             </Button>
 
-            {/* Default credentials reference card */}
-            <div className="p-3 bg-[#EAF3FF] border border-[#DCE7F7] rounded-xl text-xs text-[#0B1B4D] flex flex-col gap-1">
-              <div className="flex items-center gap-1.5 font-bold text-[#0B5FD9]">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Default Administrator Access:</span>
-              </div>
-              <p className="text-[11px] text-[#44546F] leading-relaxed">
-                <strong>Username:</strong> <code className="bg-white px-1.5 py-0.5 rounded border border-blue-200 font-mono">admin</code> &nbsp;·&nbsp;
-                <strong>Password:</strong> <code className="bg-white px-1.5 py-0.5 rounded border border-blue-200 font-mono">ScaleUp@Admin2026!</code>
-              </p>
-            </div>
-
             <div className="pt-2 flex items-center justify-between text-xs text-[#44546F]">
               <Link href="/" className="hover:text-[#0B5FD9] flex items-center gap-1 font-medium">
                 <ArrowLeft className="w-3.5 h-3.5" />
