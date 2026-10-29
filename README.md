@@ -116,3 +116,5 @@ scaleup/
 ├── tsconfig.json
 └── package.json
 ```
+
+# ScaleUp-website
