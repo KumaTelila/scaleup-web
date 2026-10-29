@@ -39,7 +39,7 @@ This project faithfully preserves the original design, exact copy, brand identit
   - **In-App Password Management**: Logged-in administrators can change their password directly in the console via the Security modal.
 - **Default Credentials**:
   - **Username / Email**: `admin` or `admin@scaleuptech.et`
-  - **Default Initial Password**: `REDACTED_PASSWORD`
+  - **Initial Password**: Set via `ADMIN_PASSWORD` environment variable (or initial system default).
 - **Live Content Management System (CMS)**:
   - Edit **Hero** title, tagline, description, badge text.
   - Edit **Services** details, featured Odoo deliverables, and sub-services.
@@ -95,8 +95,8 @@ This project faithfully preserves the original design, exact copy, brand identit
 ### 1. Environment Setup
 Create a `.env.local` file in the project root:
 ```env
-DATABASE_URL=postgresql://neondb_owner:REDACTED_SECRET@ep-dawn-paper-b80i7fqh-pooler.c-14.us-east-1.aws.neon.tech/neondb?sslmode=require
-POSTGRES_URL=postgresql://neondb_owner:REDACTED_SECRET@ep-dawn-paper-b80i7fqh-pooler.c-14.us-east-1.aws.neon.tech/neondb?sslmode=require
+DATABASE_URL=postgresql://neondb_owner:<YOUR_PASSWORD>@<YOUR_ENDPOINT>-pooler.c-14.us-east-1.aws.neon.tech/neondb?sslmode=require
+POSTGRES_URL=postgresql://neondb_owner:<YOUR_PASSWORD>@<YOUR_ENDPOINT>-pooler.c-14.us-east-1.aws.neon.tech/neondb?sslmode=require
 ```
 
 ### 2. Install & Run
@@ -113,7 +113,7 @@ pnpm start
 ```
 
 - Main Landing Page: `http://localhost:3000`
-- Admin Operations & CMS: `http://localhost:3000/admin` (Passcode: `admin` or `scaleup2026`)
+- Admin Operations & CMS: `http://localhost:3000/admin`
 
 ---
 
@@ -136,15 +136,9 @@ The application is configured out-of-the-box for **Vercel** (`vercel.json` inclu
    - Select your `scaleup` repository and click **Import**.
 
 3. **Configure Environment Variables in Vercel**:
-   Under the **Environment Variables** section, add:
-   - `DATABASE_URL`:
-     ```
-     postgresql://neondb_owner:REDACTED_SECRET@ep-dawn-paper-b80i7fqh-pooler.c-14.us-east-1.aws.neon.tech/neondb?sslmode=require
-     ```
-   - `POSTGRES_URL`:
-     ```
-     postgresql://neondb_owner:REDACTED_SECRET@ep-dawn-paper-b80i7fqh-pooler.c-14.us-east-1.aws.neon.tech/neondb?sslmode=require
-     ```
+   Under the **Environment Variables** section, add your connection string:
+   - `DATABASE_URL`: `postgresql://neondb_owner:<YOUR_PASSWORD>@<YOUR_ENDPOINT>-pooler.c-14.us-east-1.aws.neon.tech/neondb?sslmode=require`
+   - `POSTGRES_URL`: `postgresql://neondb_owner:<YOUR_PASSWORD>@<YOUR_ENDPOINT>-pooler.c-14.us-east-1.aws.neon.tech/neondb?sslmode=require`
 
 4. **Deploy**:
    - Click **Deploy**. Vercel will build and deploy the Next.js App Router application in under a minute!
